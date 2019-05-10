@@ -1,0 +1,18 @@
+#!/bin/bash
+
+function usage() {
+    cat <<EOF
+Usage: pip search <pkg> | $(basename $0) [min_maj_ver]
+
+EOF
+}
+
+maj_v=${1:-1}
+
+# check if there's data on stdin
+[ -t 0 ] && echo "Error: no input" >&2 && usage && exit 1
+
+while read -t 5 line; do
+    echo $line | \
+        perl -ne '/^(\S+) \(((\d{1,2}).\d{1,2}.\d{1,2})\)\s+-\s(.+)/; $3 >= '${maj_v}' && print "${1} (${2})-----------${4}\n"'
+done

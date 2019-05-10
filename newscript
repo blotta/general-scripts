@@ -1,0 +1,68 @@
+#!/bin/bash
+
+name=${1:-$(date +%Y%m%d-%H%M%S)_newscript}
+
+ext='.sh'
+
+dir="$HOME/bin"
+
+
+mkdir -p "$dir"
+
+script_path="$dir/${name}${ext}"
+
+cat <<EOF > $script_path
+#!/bin/bash
+# -------------------------------------------------------------------
+# [Author] Title
+#          Description
+# -------------------------------------------------------------------
+
+VERSION=0.1.0
+SUBJECT=$(uuidgen -n @dns -N $name.$(hostname -f) -s)
+
+function usage() {
+cat <<EOU
+Usage: \$(basename \$0)
+EOU
+}
+
+# --- Options -------------------------------------------------------
+
+while getopts ":i:vh" optname
+do
+  case "\$optname" in
+    "v") echo "Version \$VERSION"; exit 0; ;;
+    "i") echo "-i argument: \$OPTARG" ;;
+    "h") usage; exit 0; ;;
+    "?") echo "Unknown option \$OPTARG"; exit 0; ;;
+    ":") echo "No argument value for option \$OPTARG"; exit 0; ;;
+    *) echo "Unknown error while processing options"; exit 0; ;;
+  esac
+done
+
+shift \$((\$OPTIND - 1))
+
+param1=\$1
+param2=\$2
+
+# --- Locks ---------------------------------------------------------
+
+LOCK_FILE=/tmp/\$SUBJECT.lock
+if [ -f "\$LOCK_FILE" ]; then
+   echo "Script is already running"
+   exit
+fi
+
+trap "rm -f \$LOCK_FILE" EXIT
+touch \$LOCK_FILE
+
+# --- Logic ---------------------------------------------------------
+
+EOF
+
+chmod +x $script_path
+
+editor=${EDITOR:-vim}
+
+exec "$editor" "$script_path"

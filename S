@@ -1,0 +1,86 @@
+#!/bin/bash
+# -------------------------------------------------------------------
+# [Author] Title: S
+#          Description: systemctl simple wrapper
+# -------------------------------------------------------------------
+
+VERSION=0.1.0
+SUBJECT=07585fea-57a5-5b81-971f-512b50288864
+
+function usage() {
+    cat <<EOU
+Usage: $(basename $0) <service> [actions]
+
+actions:
+    -s      status (default)
+    -a      start
+    -o      stop
+    -r      restart
+    -e      enable
+    -d      disable
+EOU
+}
+
+# --- Init ----------------------------------------------------------
+
+set -e
+
+[ -z "$1" ] && usage && exit 1
+
+if [ "$1" != '-v' ] && [ "$1" != '-h' ]; then
+    service="$1"
+    shift
+fi
+
+# --- Options -------------------------------------------------------
+
+actions_arr=()
+
+while getopts ":vhsaroed" optname
+do
+  case "$optname" in
+    "v") echo "Version $VERSION"; exit 0; ;;
+    "h") usage; exit 0; ;;
+    's') actions_arr+=('s') ;;
+    'a') actions_arr+=('a') ;;
+    'r') actions_arr+=('r') ;;
+    'o') actions_arr+=('o') ;;
+    'e') actions_arr+=('e') ;;
+    'd') actions_arr+=('d') ;;
+    "?") echo "Unknown option $OPTARG"; exit 0; ;;
+    ":") echo "No argument value for option $OPTARG"; exit 0; ;;
+    *) echo "Unknown error while processing options"; exit 0; ;;
+  esac
+done
+
+shift $(($OPTIND - 1))
+
+# --- Locks ---------------------------------------------------------
+
+LOCK_FILE=/tmp/$SUBJECT.lock
+if [ -f "$LOCK_FILE" ]; then
+   echo "Script is already running"
+   exit
+fi
+
+trap "rm -f $LOCK_FILE" EXIT
+touch $LOCK_FILE
+
+# --- Logic ---------------------------------------------------------
+
+[ -z "${actions_arr[*]}" ] && actions_arr=('s')
+
+for i in ${actions_arr[@]}; do
+    # echo $i
+    case $i in
+        s) systemctl --no-pager status $service ;;
+        a) sudo systemctl start $service ;;
+        o) sudo systemctl stop $service ;;
+        r) sudo systemctl restart $service ;;
+        e) sudo systemctl enable $service ;;
+        d) sudo systemctl disable $service ;;
+        *) echo "Unknown action $i" ;;
+    esac
+done
+
+
