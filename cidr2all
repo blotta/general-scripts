@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+from __future__ import print_function
+import ipaddress
+import sys
+
+def usage():
+    print("Usage: cidr2all <cidr net>")
+
+def list_net_ips(net):
+    for ip in net.hosts():
+        print(ip)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        usage()
+        sys.exit(1)
+
+    cidrnet = unicode(sys.argv[1])
+
+    try:
+        net = ipaddress.ip_network(cidrnet)
+    except ValueError as e:
+        print("Invalid CIDR network")
+        sys.exit(2)
+
+    try:
+        list_net_ips(net)
+    except KeyboardInterrupt:
+        pass
